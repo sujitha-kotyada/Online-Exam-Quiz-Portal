@@ -1,4 +1,4 @@
-# Study Check
+# Study Check -Online Exam & Quiz Portal
 
 Study Check is a full-stack online examination and quiz portal built with the MERN stack. It provides separate experiences for students and faculty, timed assessments, automatic saving, server-authoritative timing, result analysis, and role-based access control.
 
