@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { resultApi } from '../../api/resultApi';
+import { examApi } from '../../api/examApi';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
 const ResultDetails = () => {
   const { resultId } = useParams();
   const [result, setResult] = useState(null);
+  const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -13,7 +15,20 @@ const ResultDetails = () => {
     const fetchResult = async () => {
       try {
         const res = await resultApi.getResultById(resultId);
-        setResult(res.result);
+        const resResult = res.result;
+        setResult(resResult);
+
+        const targetExamId = resResult?.examId?._id || resResult?.examId;
+        if (targetExamId) {
+          try {
+            const qRes = await examApi.getQuestions(targetExamId);
+            if (qRes.questions) {
+              setQuestions(qRes.questions);
+            }
+          } catch {
+            // non-fatal
+          }
+        }
       } catch (err) {
         setError(err.response?.data?.message || 'Failed to load exam result details');
       } finally {
@@ -122,7 +137,26 @@ const ResultDetails = () => {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', padding: '0.5rem 0' }}>
-            {result.breakdown?.map((item, index) => (
+            {result.breakdown?.map((item, index) => {
+              const qId = item.questionId?._id ? item.questionId._id.toString() : item.questionId?.toString();
+              const matchedQ = questions.find((q) => q._id?.toString() === qId);
+              const availableOptions = (item.options && item.options.length > 0)
+                ? item.options
+                : (matchedQ?.options || []);
+
+              const getOptText = (optId) => {
+                if (!optId) return '';
+                const found = availableOptions.find((o) => o.id === optId);
+                return found ? found.text : '';
+              };
+
+              const studentAnswerDisplay = item.questionType === 'subjective'
+                ? (item.answerText || 'Not Answered')
+                : (item.selectedOptionText || getOptText(item.selectedOption) || (item.selectedOption ? `Option: ${item.selectedOption}` : 'Not Answered'));
+
+              const correctAnswerDisplay = item.correctAnswerText || getOptText(item.correctAnswer) || item.correctAnswer;
+
+              return (
               <div
                 key={item.questionId || index}
                 style={{
@@ -145,9 +179,9 @@ const ResultDetails = () => {
                 </div>
 
                 {/* Options list if available */}
-                {item.questionType === 'mcq' && item.options && item.options.length > 0 && (
+                {item.questionType === 'mcq' && availableOptions.length > 0 && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', marginBottom: '1.25rem' }}>
-                    {item.options.map((opt, optIdx) => {
+                    {availableOptions.map((opt, optIdx) => {
                       const isSelected = item.selectedOption === opt.id;
                       const isCorrectKey = item.correctAnswer === opt.id;
                       let badgeBg = 'var(--bg-subtle)';
@@ -201,16 +235,14 @@ const ResultDetails = () => {
                   <div style={{ background: item.gradingStatus === 'pending' ? 'var(--warning-light)' : item.selectedOption ? (item.isCorrect ? 'var(--success-light)' : 'var(--danger-light)') : 'var(--warning-light)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-sm)' }}>
                     <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>YOUR ANSWER:</div>
                     <div style={{ fontWeight: 700, color: item.gradingStatus === 'pending' ? '#92400e' : item.selectedOption ? (item.isCorrect ? '#065f46' : '#991b1b') : '#92400e', whiteSpace: 'pre-wrap', marginTop: '0.25rem' }}>
-                      {item.questionType === 'subjective'
-                        ? (item.answerText || 'Not Answered')
-                        : (item.selectedOptionText || (item.options?.find((o) => o.id === item.selectedOption)?.text) || (item.selectedOption ? `Option: ${item.selectedOption}` : 'Not Answered'))}
+                      {studentAnswerDisplay}
                     </div>
                   </div>
 
                   <div style={{ background: 'var(--success-light)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-sm)' }}>
                     <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>CORRECT ANSWER:</div>
                     <div style={{ fontWeight: 700, color: '#065f46', marginTop: '0.25rem' }}>
-                      {item.correctAnswerText || (item.options?.find((o) => o.id === item.correctAnswer)?.text) || item.correctAnswer}
+                      {correctAnswerDisplay}
                     </div>
                   </div>
                 </div>
@@ -221,7 +253,8 @@ const ResultDetails = () => {
                   </div>
                 )}
               </div>
-            ))}
+            );
+            })}
           </div>
         )}
       </div>

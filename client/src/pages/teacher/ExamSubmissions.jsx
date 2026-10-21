@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { resultApi } from '../../api/resultApi';
+import { examApi } from '../../api/examApi';
 import Modal from '../../components/Modal';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
@@ -8,6 +9,7 @@ const ExamSubmissions = () => {
   const { examId } = useParams();
 
   const [data, setData] = useState(null);
+  const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedSubmission, setSelectedSubmission] = useState(null);
@@ -17,8 +19,12 @@ const ExamSubmissions = () => {
   useEffect(() => {
     const fetchResultsAndAnalytics = async () => {
       try {
-        const res = await resultApi.getExamResultsAndAnalytics(examId);
+        const [res, qRes] = await Promise.all([
+          resultApi.getExamResultsAndAnalytics(examId),
+          examApi.getQuestions(examId).catch(() => ({ questions: [] }))
+        ]);
         setData(res);
+        setQuestions(qRes.questions || []);
       } catch (err) {
         setError(err.response?.data?.message || 'Failed to load submissions and analytics');
       } finally {
@@ -267,7 +273,23 @@ const ExamSubmissions = () => {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '420px', overflowY: 'auto' }}>
-              {selectedSubmission.breakdown?.map((item, idx) => (
+              {selectedSubmission.breakdown?.map((item, idx) => {
+                const qId = item.questionId?._id ? item.questionId._id.toString() : item.questionId?.toString();
+                const matchedQ = questions.find((q) => q._id?.toString() === qId);
+                const availableOptions = (item.options && item.options.length > 0)
+                  ? item.options
+                  : (matchedQ?.options || []);
+
+                const getOptText = (optId) => {
+                  if (!optId) return '';
+                  const found = availableOptions.find((o) => o.id === optId);
+                  return found ? found.text : '';
+                };
+
+                const studentAnswerText = item.selectedOptionText || getOptText(item.selectedOption) || item.selectedOption || 'None (Unanswered)';
+                const correctAnswerText = item.correctAnswerText || getOptText(item.correctAnswer) || item.correctAnswer;
+
+                return (
                 <div
                   key={idx}
                   style={{
@@ -314,23 +336,61 @@ const ExamSubmissions = () => {
                       </div>
                     </div>
                   ) : (
-                    <div style={{ fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.35rem', marginTop: '0.5rem', background: 'var(--bg-subtle)', padding: '0.65rem 0.85rem', borderRadius: 'var(--radius-sm)' }}>
-                      <div>
-                        <strong>Student Chose:</strong>{' '}
-                        <span style={{ color: item.isCorrect ? 'var(--success)' : item.selectedOption ? 'var(--danger)' : 'var(--text-muted)', fontWeight: 600 }}>
-                          {item.selectedOptionText || (item.options?.find((o) => o.id === item.selectedOption)?.text) || item.selectedOption || 'None (Unanswered)'}
-                        </span>
-                      </div>
-                      <div>
-                        <strong>Correct Answer:</strong>{' '}
-                        <span style={{ color: 'var(--success)', fontWeight: 600 }}>
-                          {item.correctAnswerText || (item.options?.find((o) => o.id === item.correctAnswer)?.text) || item.correctAnswer}
-                        </span>
+                    <div style={{ fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+                      {availableOptions.length > 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                          {availableOptions.map((opt, optIdx) => {
+                            const isChosen = item.selectedOption === opt.id;
+                            const isCorrect = item.correctAnswer === opt.id;
+                            let badgeStyle = { background: 'var(--bg-subtle)', border: '1px solid var(--border)' };
+                            if (isChosen && isCorrect) badgeStyle = { background: 'var(--success-light)', border: '1px solid var(--success-border)' };
+                            else if (isChosen && !isCorrect) badgeStyle = { background: 'var(--danger-light)', border: '1px solid var(--danger-border)' };
+                            else if (isCorrect) badgeStyle = { background: 'var(--success-light)', border: '1px solid var(--success-border)' };
+
+                            return (
+                              <div
+                                key={opt.id}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  padding: '0.45rem 0.65rem',
+                                  borderRadius: 'var(--radius-sm)',
+                                  fontSize: '0.82rem',
+                                  ...badgeStyle
+                                }}
+                              >
+                                <span>
+                                  <strong>{String.fromCharCode(65 + optIdx)}.</strong> {opt.text}
+                                </span>
+                                {isChosen && isCorrect && <span style={{ color: '#065f46', fontWeight: 700 }}>✓ Student Answer (Correct)</span>}
+                                {isChosen && !isCorrect && <span style={{ color: '#991b1b', fontWeight: 700 }}>✗ Student Answer (Incorrect)</span>}
+                                {!isChosen && isCorrect && <span style={{ color: '#065f46', fontWeight: 700 }}>✓ Correct Key</span>}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', background: 'var(--bg-subtle)', padding: '0.65rem 0.85rem', borderRadius: 'var(--radius-sm)' }}>
+                        <div>
+                          <strong>Student Answer:</strong>{' '}
+                          <span style={{ color: item.isCorrect ? 'var(--success)' : item.selectedOption ? 'var(--danger)' : 'var(--text-muted)', fontWeight: 600 }}>
+                            {studentAnswerText}
+                          </span>
+                        </div>
+                        <div>
+                          <strong>Correct Answer:</strong>{' '}
+                          <span style={{ color: 'var(--success)', fontWeight: 600 }}>
+                            {correctAnswerText}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   )}
                 </div>
-              ))}
+              );
+              })}
             </div>
           </div>
         )}
