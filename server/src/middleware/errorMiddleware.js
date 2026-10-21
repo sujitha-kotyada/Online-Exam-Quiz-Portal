@@ -40,7 +40,7 @@ const errorHandler = (err, req, res, next) => {
   }
 
   // Default response
-  const statusCode = res.statusCode && res.statusCode !== 200 ? res.statusCode : 500;
+  const statusCode = err.statusCode || error.statusCode || (res.statusCode && res.statusCode !== 200 ? res.statusCode : 500);
   return res.status(statusCode).json({
     success: false,
     message: error.message || 'Server Error'
