@@ -87,6 +87,64 @@ const LoginPage = () => {
           </button>
         </form>
 
+        <div className="demo-credentials-card">
+          <div className="demo-credentials-header">
+            <span className="demo-badge">Demo Credentials</span>
+            <small>Click either card to auto-fill</small>
+          </div>
+          <div className="demo-grid">
+            <button
+              type="button"
+              aria-label="Auto-fill teacher demo credentials"
+              className={`demo-item ${role === 'teacher' && email === 'teacher@examportal.edu' ? 'active' : ''}`}
+              onClick={() => {
+                setRole('teacher');
+                setEmail('teacher@examportal.edu');
+                setPassword('Teacher@12345');
+                setError('');
+              }}
+            >
+              <div className="demo-item-top">
+                <span className="demo-role-tag faculty">Faculty</span>
+                <span className="demo-action-hint">Auto-fill ⚡</span>
+              </div>
+              <div className="demo-field">
+                <span className="demo-label">Email</span>
+                <code>teacher@examportal.edu</code>
+              </div>
+              <div className="demo-field">
+                <span className="demo-label">Password</span>
+                <code>Teacher@12345</code>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              aria-label="Auto-fill student demo credentials"
+              className={`demo-item ${role === 'student' && email === 'alice@student.edu' ? 'active' : ''}`}
+              onClick={() => {
+                setRole('student');
+                setEmail('alice@student.edu');
+                setPassword('Student@12345');
+                setError('');
+              }}
+            >
+              <div className="demo-item-top">
+                <span className="demo-role-tag student">Student</span>
+                <span className="demo-action-hint">Auto-fill ⚡</span>
+              </div>
+              <div className="demo-field">
+                <span className="demo-label">Email</span>
+                <code>alice@student.edu</code>
+              </div>
+              <div className="demo-field">
+                <span className="demo-label">Password</span>
+                <code>Student@12345</code>
+              </div>
+            </button>
+          </div>
+        </div>
+
         <p className="auth-footer">New to Study Check? <Link to="/register">Create a student account</Link></p>
       </div>
     </div>
