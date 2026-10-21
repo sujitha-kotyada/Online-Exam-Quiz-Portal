@@ -237,7 +237,7 @@ const CreateEditExam = () => {
               className="btn btn-primary btn-lg"
               disabled={submitting}
             >
-              {submitting ? 'Saving Configuration...' : isEditing ? 'Update Exam Settings' : 'Create Exam & Add Questions &rarr;'}
+              {submitting ? 'Saving Configuration...' : isEditing ? 'Update Exam Settings' : 'Create Exam & Add Questions →'}
             </button>
           </div>
         </form>

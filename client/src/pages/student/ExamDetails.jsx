@@ -131,7 +131,7 @@ const ExamDetails = () => {
             onClick={handleStartExam}
             disabled={starting}
           >
-            {starting ? 'Initiating Attempt...' : 'Start Assessment Now &rarr;'}
+            {starting ? 'Initiating Attempt...' : 'Start Assessment Now →'}
           </button>
         </div>
       </div>
