@@ -192,6 +192,22 @@ npm run preview
 
 The backend must still be configured with a reachable MongoDB instance and appropriate production environment variables. For deployment, configure the frontend API URL, backend `CLIENT_URL`, HTTPS, and strong secrets for the hosting environment.
 
+## Deploying to Vercel
+
+This repository is pre-configured for full-stack deployment on Vercel (Vite React frontend + Express serverless API) using `vercel.json` and `api/index.js`.
+
+### Quick Steps:
+
+1. Push your repository to GitHub (already completed).
+2. Go to [Vercel Dashboard](https://vercel.com/new) and click **"Add New..." > "Project"**.
+3. Import the `OnlineExam-and-QuizPortal` repository.
+4. Under **Environment Variables**, add:
+   - `MONGODB_URI`: Your MongoDB Atlas connection string (e.g., `mongodb+srv://user:pass@cluster.mongodb.net/study_check?retryWrites=true&w=majority`)
+   - `JWT_SECRET`: A secure random string (e.g. `your-super-secret-jwt-token-key-2026`)
+   - `NODE_ENV`: `production`
+5. Click **Deploy**. Vercel will build the React SPA and serve the Express backend through `/api/*` serverless functions.
+
+
 ## Testing
 
 Run backend tests:
