@@ -6,7 +6,14 @@ if (!cached) {
 }
 
 const connectDB = async (uri) => {
-  const mongoURI = uri || process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/online_exam_portal';
+  let mongoURI = uri || process.env.MONGODB_URI;
+
+  if (!mongoURI) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('MONGODB_URI is not set. Please add MONGODB_URI in your Vercel Project Settings > Environment Variables.');
+    }
+    mongoURI = 'mongodb://127.0.0.1:27017/online_exam_portal';
+  }
 
   if (mongoose.connection.readyState >= 1) {
     return mongoose.connection;
@@ -14,7 +21,8 @@ const connectDB = async (uri) => {
 
   if (!cached.promise) {
     cached.promise = mongoose.connect(mongoURI, {
-      serverSelectionTimeoutMS: 5000
+      serverSelectionTimeoutMS: 5000,
+      dbName: process.env.DB_NAME || 'online_exam_portal'
     }).then((m) => {
       console.log(`[Database] MongoDB Connected: ${m.connection.host}`);
       return m;
@@ -27,7 +35,6 @@ const connectDB = async (uri) => {
   } catch (error) {
     cached.promise = null;
     console.error(`[Database Error] Could not connect to MongoDB: ${error.message}`);
-    console.error('[Database Advice] Please verify MongoDB is running locally or supply a valid MONGODB_URI in server/.env');
     throw error;
   }
 };

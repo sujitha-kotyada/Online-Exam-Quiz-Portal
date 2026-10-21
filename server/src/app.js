@@ -16,6 +16,7 @@ const resultController = require('./controllers/resultController');
 const { protect } = require('./middleware/authMiddleware');
 const { authorize } = require('./middleware/roleMiddleware');
 const { errorHandler, notFoundHandler } = require('./middleware/errorMiddleware');
+const { connectDB } = require('./config/db');
 
 const app = express();
 
@@ -69,6 +70,25 @@ app.get('/api/health', (req, res) => {
     uptime: process.uptime(),
     timestamp: new Date().toISOString()
   });
+});
+
+// Ensure database connection is active before processing any API requests
+app.use('/api', async (req, res, next) => {
+  // Allow vitest integration tests with mocked or memory DBs to proceed
+  if (process.env.NODE_ENV === 'test') {
+    return next();
+  }
+
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error('[API Database Connection Error]:', error.message);
+    return res.status(503).json({
+      success: false,
+      message: `Database connection error: ${error.message}. Please check MONGODB_URI in Vercel project settings and ensure MongoDB Atlas Network Access whitelist contains 0.0.0.0/0.`
+    });
+  }
 });
 
 // Nested routes and direct routes required by spec
