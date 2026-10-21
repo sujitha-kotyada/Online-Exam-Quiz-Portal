@@ -144,18 +144,73 @@ const ResultDetails = () => {
                   {item.questionText}
                 </div>
 
+                {/* Options list if available */}
+                {item.questionType === 'mcq' && item.options && item.options.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', marginBottom: '1.25rem' }}>
+                    {item.options.map((opt, optIdx) => {
+                      const isSelected = item.selectedOption === opt.id;
+                      const isCorrectKey = item.correctAnswer === opt.id;
+                      let badgeBg = 'var(--bg-subtle)';
+                      let border = '1px solid var(--border)';
+                      let badgeLabel = null;
+
+                      if (isSelected && isCorrectKey) {
+                        badgeBg = 'var(--success-light)';
+                        border = '1px solid var(--success-border)';
+                        badgeLabel = '✓ Your Choice (Correct)';
+                      } else if (isSelected && !isCorrectKey) {
+                        badgeBg = 'var(--danger-light)';
+                        border = '1px solid var(--danger-border)';
+                        badgeLabel = '✗ Your Choice (Incorrect)';
+                      } else if (isCorrectKey) {
+                        badgeBg = 'var(--success-light)';
+                        border = '1px solid var(--success-border)';
+                        badgeLabel = '✓ Correct Answer';
+                      }
+
+                      return (
+                        <div
+                          key={opt.id}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '0.6rem 0.85rem',
+                            borderRadius: 'var(--radius-sm)',
+                            border,
+                            background: badgeBg,
+                            fontSize: '0.9rem'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                            <span style={{ fontWeight: 700, width: '22px' }}>{String.fromCharCode(65 + optIdx)}.</span>
+                            <span style={{ fontWeight: isSelected || isCorrectKey ? 700 : 400 }}>{opt.text}</span>
+                          </div>
+                          {badgeLabel && (
+                            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: isCorrectKey ? '#065f46' : '#991b1b' }}>
+                              {badgeLabel}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }}>
                   <div style={{ background: item.gradingStatus === 'pending' ? 'var(--warning-light)' : item.selectedOption ? (item.isCorrect ? 'var(--success-light)' : 'var(--danger-light)') : 'var(--warning-light)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-sm)' }}>
                     <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>YOUR ANSWER:</div>
-                    <div style={{ fontWeight: 700, color: item.gradingStatus === 'pending' ? '#92400e' : item.selectedOption ? (item.isCorrect ? '#065f46' : '#991b1b') : '#92400e', whiteSpace: 'pre-wrap' }}>
-                      {item.questionType === 'subjective' ? (item.answerText || 'Not Answered') : item.selectedOption ? `Option ID: ${item.selectedOption}` : 'Not Answered'}
+                    <div style={{ fontWeight: 700, color: item.gradingStatus === 'pending' ? '#92400e' : item.selectedOption ? (item.isCorrect ? '#065f46' : '#991b1b') : '#92400e', whiteSpace: 'pre-wrap', marginTop: '0.25rem' }}>
+                      {item.questionType === 'subjective'
+                        ? (item.answerText || 'Not Answered')
+                        : (item.selectedOptionText || (item.options?.find((o) => o.id === item.selectedOption)?.text) || (item.selectedOption ? `Option: ${item.selectedOption}` : 'Not Answered'))}
                     </div>
                   </div>
 
                   <div style={{ background: 'var(--success-light)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-sm)' }}>
                     <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>CORRECT ANSWER:</div>
-                    <div style={{ fontWeight: 700, color: '#065f46' }}>
-                      Option ID: {item.correctAnswer}
+                    <div style={{ fontWeight: 700, color: '#065f46', marginTop: '0.25rem' }}>
+                      {item.correctAnswerText || (item.options?.find((o) => o.id === item.correctAnswer)?.text) || item.correctAnswer}
                     </div>
                   </div>
                 </div>

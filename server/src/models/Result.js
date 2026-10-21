@@ -20,6 +20,10 @@ const resultItemSchema = new mongoose.Schema(
       type: String,
       default: null
     },
+    selectedOptionText: {
+      type: String,
+      default: ''
+    },
     answerText: {
       type: String,
       default: ''
@@ -28,6 +32,16 @@ const resultItemSchema = new mongoose.Schema(
       type: String,
       default: ''
     },
+    correctAnswerText: {
+      type: String,
+      default: ''
+    },
+    options: [
+      {
+        id: { type: String },
+        text: { type: String }
+      }
+    ],
     isCorrect: {
       type: Boolean,
       default: null

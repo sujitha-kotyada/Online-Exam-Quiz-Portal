@@ -314,9 +314,19 @@ const ExamSubmissions = () => {
                       </div>
                     </div>
                   ) : (
-                    <div style={{ fontSize: '0.825rem', display: 'flex', gap: '1rem' }}>
-                      <div><strong>Student Chose:</strong> {item.selectedOption || 'None (Unanswered)'}</div>
-                      <div><strong>Correct Key:</strong> {item.correctAnswer}</div>
+                    <div style={{ fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.35rem', marginTop: '0.5rem', background: 'var(--bg-subtle)', padding: '0.65rem 0.85rem', borderRadius: 'var(--radius-sm)' }}>
+                      <div>
+                        <strong>Student Chose:</strong>{' '}
+                        <span style={{ color: item.isCorrect ? 'var(--success)' : item.selectedOption ? 'var(--danger)' : 'var(--text-muted)', fontWeight: 600 }}>
+                          {item.selectedOptionText || (item.options?.find((o) => o.id === item.selectedOption)?.text) || item.selectedOption || 'None (Unanswered)'}
+                        </span>
+                      </div>
+                      <div>
+                        <strong>Correct Answer:</strong>{' '}
+                        <span style={{ color: 'var(--success)', fontWeight: 600 }}>
+                          {item.correctAnswerText || (item.options?.find((o) => o.id === item.correctAnswer)?.text) || item.correctAnswer}
+                        </span>
+                      </div>
                     </div>
                   )}
                 </div>

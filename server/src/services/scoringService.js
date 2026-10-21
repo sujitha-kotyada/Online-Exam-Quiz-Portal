@@ -247,6 +247,13 @@ class ScoringService {
       const selectedOption = studentAnswer.selectedOption || null;
       const answerText = studentAnswer.answerText || '';
 
+      const selectedOptionObj = question.options?.find((o) => o.id === selectedOption);
+      const selectedOptionText = selectedOptionObj ? selectedOptionObj.text : '';
+
+      const correctOptionObj = question.options?.find((o) => o.id === question.correctAnswer);
+      const correctAnswerText = correctOptionObj ? correctOptionObj.text : '';
+      const qOptions = (question.options || []).map((o) => ({ id: o.id, text: o.text }));
+
       if (question.questionType === 'subjective') {
         if (!answerText.trim()) {
           unansweredCount++;
@@ -258,7 +265,10 @@ class ScoringService {
           questionText: question.questionText,
           questionType: 'subjective',
           answerText,
+          selectedOptionText: '',
           correctAnswer: '',
+          correctAnswerText: '',
+          options: [],
           isCorrect: null,
           gradingStatus: 'pending',
           marksAwarded: 0,
@@ -275,7 +285,10 @@ class ScoringService {
           questionText: question.questionText,
           questionType: 'mcq',
           selectedOption: null,
+          selectedOptionText: '',
           correctAnswer: question.correctAnswer,
+          correctAnswerText,
+          options: qOptions,
           isCorrect: false,
           marksAwarded: 0,
           maxMarks: qMarks,
@@ -289,7 +302,10 @@ class ScoringService {
           questionText: question.questionText,
           questionType: 'mcq',
           selectedOption,
+          selectedOptionText,
           correctAnswer: question.correctAnswer,
+          correctAnswerText,
+          options: qOptions,
           isCorrect: true,
           marksAwarded: qMarks,
           maxMarks: qMarks,
@@ -302,7 +318,10 @@ class ScoringService {
           questionText: question.questionText,
           questionType: 'mcq',
           selectedOption,
+          selectedOptionText,
           correctAnswer: question.correctAnswer,
+          correctAnswerText,
+          options: qOptions,
           isCorrect: false,
           marksAwarded: 0,
           maxMarks: qMarks,

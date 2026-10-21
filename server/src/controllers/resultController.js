@@ -17,6 +17,42 @@ const getMyResults = async (req, res, next) => {
   }
 };
 
+const enrichBreakdownWithOptions = async (breakdown) => {
+  if (!Array.isArray(breakdown) || breakdown.length === 0) return breakdown;
+
+  const needsEnrichment = breakdown.some(
+    (item) => item.questionType === 'mcq' && (!item.selectedOptionText || !item.correctAnswerText || !item.options || item.options.length === 0)
+  );
+
+  if (!needsEnrichment) {
+    return breakdown;
+  }
+
+  const questionIds = breakdown.map((item) => item.questionId).filter(Boolean);
+  const questions = await Question.find({ _id: { $in: questionIds } }).select('options correctAnswer');
+  const questionMap = new Map(questions.map((q) => [q._id.toString(), q]));
+
+  return breakdown.map((item) => {
+    const itemObj = item.toObject ? item.toObject() : { ...item };
+    const q = questionMap.get(itemObj.questionId?.toString());
+    if (q && q.options) {
+      if (!itemObj.options || itemObj.options.length === 0) {
+        itemObj.options = q.options.map((o) => ({ id: o.id, text: o.text }));
+      }
+      if (!itemObj.selectedOptionText && itemObj.selectedOption) {
+        const found = q.options.find((o) => o.id === itemObj.selectedOption);
+        if (found) itemObj.selectedOptionText = found.text;
+      }
+      if (!itemObj.correctAnswerText && (itemObj.correctAnswer || q.correctAnswer)) {
+        const target = itemObj.correctAnswer || q.correctAnswer;
+        const found = q.options.find((o) => o.id === target);
+        if (found) itemObj.correctAnswerText = found.text;
+      }
+    }
+    return itemObj;
+  });
+};
+
 const getResultById = async (req, res, next) => {
   try {
     const { resultId } = req.params;
@@ -37,19 +73,26 @@ const getResultById = async (req, res, next) => {
         });
       }
 
+      const resultObj = result.toObject();
+      resultObj.breakdown = await enrichBreakdownWithOptions(resultObj.breakdown);
+
       // If review is disallowed by teacher, remove correctAnswer and explanation
       if (!result.examId.allowAnswerReview) {
-        const sanitized = result.toObject();
-        sanitized.breakdown = sanitized.breakdown.map((item) => ({
+        resultObj.breakdown = resultObj.breakdown.map((item) => ({
           questionId: item.questionId,
           questionText: item.questionText,
+          questionType: item.questionType,
           selectedOption: item.selectedOption,
+          selectedOptionText: item.selectedOptionText,
+          answerText: item.answerText,
           isCorrect: item.isCorrect,
           marksAwarded: item.marksAwarded,
           maxMarks: item.maxMarks
         }));
-        return res.status(200).json({ success: true, result: sanitized });
+        return res.status(200).json({ success: true, result: resultObj });
       }
+
+      return res.status(200).json({ success: true, result: resultObj });
     } else if (req.user.role === 'teacher') {
       if (result.examId.createdBy.toString() !== req.user._id.toString()) {
         return res.status(403).json({
@@ -57,6 +100,10 @@ const getResultById = async (req, res, next) => {
           message: 'Forbidden: You can only view results for exams you created'
         });
       }
+
+      const resultObj = result.toObject();
+      resultObj.breakdown = await enrichBreakdownWithOptions(resultObj.breakdown);
+      return res.status(200).json({ success: true, result: resultObj });
     }
 
     res.status(200).json({
@@ -136,6 +183,14 @@ const getExamResultsAndAnalytics = async (req, res, next) => {
       };
     });
 
+    const enrichedResults = await Promise.all(
+      results.map(async (r) => {
+        const rObj = r.toObject();
+        rObj.breakdown = await enrichBreakdownWithOptions(rObj.breakdown);
+        return rObj;
+      })
+    );
+
     res.status(200).json({
       success: true,
       exam,
@@ -149,7 +204,7 @@ const getExamResultsAndAnalytics = async (req, res, next) => {
         passRate,
         questionAccuracy
       },
-      results
+      results: enrichedResults
     });
   } catch (error) {
     next(error);
