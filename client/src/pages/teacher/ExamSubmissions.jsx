@@ -241,6 +241,7 @@ const ExamSubmissions = () => {
         isOpen={!!selectedSubmission}
         onClose={() => setSelectedSubmission(null)}
         title={`Candidate Submission: ${selectedSubmission?.studentId?.name}`}
+        size="lg"
       >
         {selectedSubmission && (
           <div>

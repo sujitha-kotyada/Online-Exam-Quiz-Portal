@@ -282,6 +282,7 @@ const QuestionEditor = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title={editingQuestionId ? 'Edit Question' : 'Add New Question'}
+        size="lg"
       >
         {modalError && <div className="alert alert-danger">{modalError}</div>}
 
